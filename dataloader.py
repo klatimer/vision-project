@@ -14,7 +14,7 @@ class BirdLoader(object):
 		    [
 		     # Data augmentations
 		     transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
-		     transforms.RandomHorizontalFlip()
+		     transforms.RandomHorizontalFlip(),
 		     transforms.RandomRotation(10),
 		     transforms.RandomCrop(32),
 		     transforms.ToTensor(),
@@ -34,7 +34,7 @@ class BirdLoader(object):
 		self.trainloader = torch.utils.data.DataLoader(bird_train_set, batch_size=args.batchSize,
 														shuffle=True, num_workers=2)
 		bird_test_set = BirdTestSet(test_dir=test_dir, root_dir=root_dir, transform=transform_test)
-		self.testloader = torch.utils.DataLoader(bird_test_set, batch_size=args.batchSize,
+		self.testloader = torch.utils.data.DataLoader(bird_test_set, batch_size=args.batchSize,
 														shuffle=False, num_workers=2)
 
 		classes = []

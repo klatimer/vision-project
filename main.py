@@ -1,5 +1,5 @@
 from utils import argParser
-from dataloader import CifarLoader
+from dataloader import BirdLoader
 import matplotlib.pyplot as plt
 import numpy as np
 import models
