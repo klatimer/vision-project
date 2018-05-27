@@ -112,7 +112,6 @@ def main():
     net = args.model()
     net = net.to(device)
 
-    """
     print('The log is recorded in ')
     print(net.logFile.name)
 
@@ -127,7 +126,6 @@ def main():
 
     print('The log is recorded in ')
     print(net.logFile.name)
-    """
 
 if __name__ == '__main__':
     main()

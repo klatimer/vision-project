@@ -4,7 +4,7 @@ import torchvision.transforms as transforms
 
 import os
 import pandas as pd
-
+from PIL import Image
 
 class BirdLoader(object):
 
@@ -59,7 +59,7 @@ class BirdTrainSet(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         name = os.path.join(self.root_dir, self.names.iloc[idx])
-        img = Image.open(name)
+        img = transforms.ToTensor()(Image.open(os.path.expanduser(name)))
         label = self.labels.iloc[idx]
         item = {'image': img, 'label': label}  # change this to labels?
         return item
@@ -83,5 +83,5 @@ class BirdTestSet(torch.utils.data.Dataset):
     # Not given labels for test data (because it's a competition)
     def __getitem__(self, idx):
         name = os.path.join(self.root_dir, self.names[idx])
-        img = Image.open(name)
+        img = transforms.ToTensor()(Image.open(os.path.expanduser(name)))
         return img
