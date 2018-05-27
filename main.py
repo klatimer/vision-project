@@ -33,7 +33,7 @@ def train(net, dataloader, optimizer, criterion, epoch):
         else:
             # Convert labels to one-hot vector
             one_hot = torch.zeros(len(labels), 10).to(device)
-            target = one_hot.scatter_(1, labels.data.unsqueeze(1), 1) # look along dim=1, replace indices from labels.data with 1
+            target = one_hot.scatter_(1, labels.data.unsqueeze(1), 1)
             target = Variable(target)
             loss = criterion(outputs, target.float())
 
@@ -107,12 +107,12 @@ def main():
     # Test the classes field
     print(birdLoader.classes[0])
     print(birdLoader.classes[1])
+    print(birdLoader.classes[len(birdLoader.classes) - 1])
 
-    # cifarLoader = CifarLoader(args)
-    """
     net = args.model()
     net = net.to(device)
 
+    """
     print('The log is recorded in ')
     print(net.logFile.name)
 

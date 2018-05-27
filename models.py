@@ -31,9 +31,9 @@ class BaseModel(nn.Module):
         return optim.SGD(self.parameters(), lr=0.001)
 
     def adjust_learning_rate(self, optimizer, epoch, args):
+        """
         # Uncomment this to decrease learning rate by 10% every 50 epochs, following
         # an exponential curve.
-        """
         if epoch > 0:
             lr = args.lr * math.exp(math.log(0.1) * 50 / epoch)
         else:
@@ -44,17 +44,23 @@ class BaseModel(nn.Module):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
-class CifarNet(BaseModel):
+# The highly experimental BirdNestV1 neural network
+class BirdNestV1(BaseModel):
     def __init__(self):
-        super(CifarNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        super(BirdNestV1, self).__init__()
+        res = 128 # resolution (on a side) to downsample to - data set has nonuniform resolution
+        filt_size = 5
+        pool_size = 2
+        self.downsample = nn.AdaptiveAvgPool2d((res, res))
+        self.conv1 = nn.Conv2d(3, 48, filt_size) # 3 channel input, 6 layer feature map, filter size 5
+        self.pool = nn.MaxPool2d(pool_size, pool_size)
+        self.conv2 = nn.Conv2d(6, 128, filt_size)
+        self.fc1 = nn.Linear(128 * filt_size * filt_size, 960)
+        self.fc2 = nn.Linear(960, 800)
+        self.fc3 = nn.Linear(800, 555)
 
     def forward(self, x):
+        x = self.downsample(x)
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
