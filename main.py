@@ -103,6 +103,11 @@ def main():
     args = argParser()
 
     birdLoader = BirdLoader(args)
+
+    # Test the classes field
+    print(birdLoader.classes[0])
+    print(birdLoader.classes[1])
+
     # cifarLoader = CifarLoader(args)
     """
     net = args.model()
@@ -116,10 +121,9 @@ def main():
 
     for epoch in range(args.epochs):
         net.adjust_learning_rate(optimizer, epoch, args)
-        train(net, cifarLoader, optimizer, criterion, epoch)
+        train(net, birdLoader, optimizer, criterion, epoch)
         if epoch % 1 == 0: # Comment out this part if you want a faster training time
-            test(net, cifarLoader, 'Train')
-            test(net, cifarLoader, 'Test')
+            test(net, birdLoader, 'Train')
 
     print('The log is recorded in ')
     print(net.logFile.name)
