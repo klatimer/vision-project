@@ -10,6 +10,7 @@ import torchvision.models as torchmodels
 
 import math
 
+
 class BaseModel(nn.Module):
     def __init__(self):
         super(BaseModel, self).__init__()
@@ -44,27 +45,40 @@ class BaseModel(nn.Module):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
+
 # The highly experimental BirdNestV1 neural network
 class BirdNestV1(BaseModel):
-    def __init__(self):
+    def __init__(self, num_classes=555):
         super(BirdNestV1, self).__init__()
-        res = 128 # resolution (on a side) to downsample to - data set has nonuniform resolution
-        filt_size = 5
-        pool_size = 2
-        self.downsample = nn.AdaptiveAvgPool2d((res, res))
-        self.conv1 = nn.Conv2d(3, 48, filt_size) # 3 channel input, 6 layer feature map, filter size 5
-        self.pool = nn.MaxPool2d(pool_size, pool_size)
-        self.conv2 = nn.Conv2d(6, 128, filt_size)
-        self.fc1 = nn.Linear(128 * filt_size * filt_size, 960)
-        self.fc2 = nn.Linear(960, 800)
-        self.fc3 = nn.Linear(800, 555)
+        self.features = nn.Sequential(
+            # nn.AdaptiveAvgPool2d((227, 227)), # downsample
+            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, num_classes)
+        )
 
     def forward(self, x):
-        x = self.downsample(x)
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.leaky_relu(self.fc1(x))
-        x = F.leaky_relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.features(x)
+        x = x.view(x.size(0), 256 * 6 * 6)
+        x = self.classifier(x)
         return x
