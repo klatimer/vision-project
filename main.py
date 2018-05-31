@@ -28,14 +28,7 @@ def train(net, dataloader, optimizer, criterion, epoch):
         # forward + backward + optimize
         outputs = net(inputs)
 
-        if criterion == torch.nn.CrossEntropyLoss:
-            loss = criterion(outputs, labels)
-        else:
-            # Convert labels to one-hot vector
-            one_hot = torch.zeros(len(labels), 10).to(device)
-            target = one_hot.scatter_(1, labels.data.unsqueeze(1), 1)
-            target = Variable(target)
-            loss = criterion(outputs, target.float())
+        loss = criterion(outputs, labels)
 
         loss.backward()
         optimizer.step()
