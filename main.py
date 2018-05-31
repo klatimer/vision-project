@@ -19,7 +19,7 @@ def train(net, dataloader, optimizer, criterion, epoch):
 
     for i, data in enumerate(dataloader.trainloader, 0):
         # get the inputs
-        inputs, labels = data
+        inputs, labels = data['image'], data['label']
         inputs, labels = inputs.to(device), labels.to(device)
 
         # zero the parameter gradients
