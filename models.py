@@ -51,33 +51,39 @@ class BirdNestV1(BaseModel):
         super(BirdNestV1, self).__init__()
         self.features = nn.Sequential(
             # nn.AdaptiveAvgPool2d((227, 227)), # downsample
-            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            nn.Conv2d(3, 24, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(24, 48, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=3),
+            nn.Conv2d(48, 48, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            # nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            # nn.ReLU(inplace=True),
+            # nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            # nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3)
         )
-
         self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 6 * 6, 4096),
+            # nn.Dropout(),
+            nn.Linear(432, 512),
             nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes)
+            # nn.Dropout(),
+            # nn.Linear(4096, 4096),
+            # nn.ReLU(inplace=True),
+            nn.Linear(512, num_classes)
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), 256 * 6 * 6)
+        x = x.view(x.size(0), self.num_flat_features(x))
         x = self.classifier(x)
         return x
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
