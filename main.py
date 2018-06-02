@@ -87,6 +87,7 @@ def test(net, dataloader, tag=''):
     for i in range(555):
         if class_total[i] == 0:
             percent = 0
+            # print("here")
         else:
             percent = 100 * class_correct[i] / class_total[i]
             net.log('%s Accuracy of %5s : %2d %%' % (tag, dataloader.classes[i], percent))

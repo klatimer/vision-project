@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from PIL import Image
 import numpy as np
+import random
 
 
 class BirdLoader(object):
@@ -18,9 +19,9 @@ class BirdLoader(object):
             [
                 # Data augmentations
                 transforms.Resize((64, 64)),
-                # transforms.RandomCrop((100, 100)),
+                transforms.RandomCrop((64, 64)),
                 # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
-                # transforms.RandomHorizontalFlip(),
+                transforms.RandomHorizontalFlip(),
                 # transforms.RandomRotation(10),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -34,13 +35,15 @@ class BirdLoader(object):
 
         root_dir = '~/.kaggle/competitions/birds/'
         csv_file = 'labels.csv'
-        test_csv = 'sample.csv'
-        test_dir = '~/.kaggle/competitions/birds/test/'
 
-        bird_train_set = BirdTrainSet(csv_file=csv_file, root_dir=root_dir, transform=transform)
+        dataSet = pd.read_csv(root_dir + csv_file)
+        train_df = dataSet.sample(frac=0.8)
+        test_df = dataSet.drop(train_df.index)
+
+        bird_train_set = BirdTrainSet(train_labels=train_df, root_dir=root_dir, transform=transform)
         self.trainloader = torch.utils.data.DataLoader(bird_train_set, batch_size=args.batchSize,
                                                        shuffle=True, num_workers=2)
-        bird_test_set = BirdTestSet(csv_file=test_csv, root_dir=root_dir, transform=transform_test)
+        bird_test_set = BirdTestSet(train_labels=test_df, root_dir=root_dir, transform=transform_test)
         self.testloader = torch.utils.data.DataLoader(bird_test_set, batch_size=args.batchSize,
                                                       shuffle=False, num_workers=2)
 
@@ -54,9 +57,9 @@ class BirdLoader(object):
 # Need to wrap images and labels
 class BirdTrainSet(torch.utils.data.Dataset):
 
-    def __init__(self, csv_file, root_dir, transform):
+    def __init__(self, train_labels, root_dir, transform):
         self.root_dir = root_dir
-        train_labels = pd.read_csv(root_dir + csv_file)
+
         self.names = train_labels.iloc[:, 0]  # image file names
         self.labels = train_labels.iloc[:, 1]  # corresponding labels
         self.transform = transform
@@ -76,9 +79,9 @@ class BirdTrainSet(torch.utils.data.Dataset):
 
 class BirdTestSet(torch.utils.data.Dataset):
 
-    def __init__(self, csv_file, root_dir, transform):
+    def __init__(self, train_labels, root_dir, transform):
         self.root_dir = root_dir
-        train_labels = pd.read_csv(root_dir + csv_file)
+
         self.names = train_labels.iloc[:, 0]  # image file names
         self.labels = train_labels.iloc[:, 1]  # corresponding labels
         self.transform = transform
