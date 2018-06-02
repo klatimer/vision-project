@@ -1,8 +1,6 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torch.autograd import Variable
-from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 import os
 import pandas as pd
@@ -17,9 +15,10 @@ class BirdLoader(object):
         transform = transforms.Compose(
             [
                 # Data augmentations
-                transforms.Resize((38, 38)),
-                transforms.RandomCrop((32, 32)),
-                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.05),
+                # transforms.Resize((224, 224)),
+                transforms.Resize((64, 64)),
+                # transforms.RandomCrop((64, 64)),
+                # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.05),
                 # transforms.RandomHorizontalFlip(),
                 # transforms.RandomRotation(10),
                 transforms.ToTensor(),
@@ -78,7 +77,7 @@ class BirdTestSet(torch.utils.data.Dataset):
         self.test_dir = test_dir
         self.root_dir = root_dir
         names = []
-        for root, directories, files in os.walk(root_dir + test_dir):
+        for root, directories, files in os.walk(os.path.expanduser(os.path.join(root_dir, test_dir))):
             for filename in files:
                 names.append(filename)
         self.names = names
@@ -92,4 +91,5 @@ class BirdTestSet(torch.utils.data.Dataset):
         name = os.path.join(self.root_dir, self.names[idx])
         img = (Image.open(os.path.expanduser(name)))
         img = self.transform(img)
-        return img
+        item = {'image': img, 'name': name}
+        return item
