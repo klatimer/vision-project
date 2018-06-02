@@ -53,6 +53,7 @@ def test(net, dataloader, tag=''):
         dataTestLoader = dataloader.trainloader
     else:
         dataTestLoader = dataloader.testloader
+        # dataTestLoader = dataloader.trainloader
     with torch.no_grad():
         for data in dataTestLoader:
             images, labels = data['image'], data['label']
@@ -76,27 +77,24 @@ def test(net, dataloader, tag=''):
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
 
-            c = (predicted == labels).squeeze()
+            c = (predicted == labels)
 
             for i in range(len(data['label'])):
                 label = labels[i]
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
 
-
-    for i in range(10):
-        net.log('%s Accuracy of %5s : %2d %%' % (
-            tag, dataloader.classes[i], 100 * class_correct[i] / class_total[i]))
+    for i in range(555):
+        if class_total[i] == 0:
+            percent = 0
+        else:
+            percent = 100 * class_correct[i] / class_total[i]
+            net.log('%s Accuracy of %5s : %2d %%' % (tag, dataloader.classes[i], percent))
 
 def main():
     args = argParser()
 
     birdLoader = BirdLoader(args)
-
-    # Test the classes field
-    print(birdLoader.classes[0])
-    print(birdLoader.classes[1])
-    print(birdLoader.classes[len(birdLoader.classes) - 1])
 
     net = args.model()
     net = net.to(device)
@@ -111,6 +109,7 @@ def main():
         net.adjust_learning_rate(optimizer, epoch, args)
         train(net, birdLoader, optimizer, criterion, epoch)
         if epoch % 1 == 0: # Comment out this part if you want a faster training time
+            test(net, birdLoader, 'Train')
             test(net, birdLoader, 'Test')
 
     print('The log is recorded in ')
