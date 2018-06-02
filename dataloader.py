@@ -17,9 +17,9 @@ class BirdLoader(object):
         transform = transforms.Compose(
             [
                 # Data augmentations
-                transforms.Resize((256, 256)),
-                transforms.RandomCrop((224, 224)),
-                # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
+                transforms.Resize((38, 38)),
+                transforms.RandomCrop((32, 32)),
+                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.05),
                 # transforms.RandomHorizontalFlip(),
                 # transforms.RandomRotation(10),
                 transforms.ToTensor(),
@@ -69,7 +69,6 @@ class BirdTrainSet(torch.utils.data.Dataset):
         img = self.transform(img)
         label = self.labels.iloc[idx]
         item = {'image': img, 'label': torch.from_numpy(np.array(label))}
-        # item = {img, torch.from_numpy(np.array(label))}
         return item
 
 
