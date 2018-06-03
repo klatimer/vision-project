@@ -15,18 +15,17 @@ class BirdLoader(object):
         transform = transforms.Compose(
             [
                 # Data augmentations
-                # transforms.Resize((224, 224)),
-                transforms.Resize((64, 64)),
-                # transforms.RandomCrop((64, 64)),
-                # transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.05),
-                # transforms.RandomHorizontalFlip(),
-                # transforms.RandomRotation(10),
+                transforms.Resize((256, 256)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomRotation(15),
+                transforms.RandomCrop((224, 224)),
+                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
 
         transform_test = transforms.Compose([
-            transforms.Resize((64, 64)),
+            transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
