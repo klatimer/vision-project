@@ -26,7 +26,7 @@ class BirdLoader(object):
             ])
 
         transform_test = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((64, 64)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
@@ -88,8 +88,8 @@ class BirdTestSet(torch.utils.data.Dataset):
 
     # Not given labels for test data (because it's a competition)
     def __getitem__(self, idx):
-        name = os.path.join(self.root_dir, self.names[idx])
+        name = os.path.join(self.root_dir, os.path.join(self.test_dir, self.names[idx]))
         img = (Image.open(os.path.expanduser(name)))
         img = self.transform(img)
-        item = {'image': img, 'name': name}
+        item = {'image': img, 'name': os.path.join(self.test_dir, self.names[idx])}
         return item

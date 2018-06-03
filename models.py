@@ -31,7 +31,7 @@ class BaseModel(nn.Module):
         return optim.SGD(self.parameters(), lr=0.001)
 
     def adjust_learning_rate(self, optimizer, epoch, args):
-        """
+
         # Uncomment this to decrease learning rate by 10% every 50 epochs, following
         # an exponential curve.
         if epoch > 0:
@@ -43,6 +43,7 @@ class BaseModel(nn.Module):
         lr = args.lr
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
+        """
 
 
 # The highly experimental BirdNestV1 neural network
@@ -51,36 +52,42 @@ class BirdNestV1(BaseModel):
         super(BirdNestV1, self).__init__()
         self.features = nn.Sequential(
             # nn.AdaptiveAvgPool2d((227, 227)), # downsample
-            nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            nn.Conv2d(3, 24, kernel_size=5, padding=2),
+            nn.LeakyReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(24, 48, kernel_size=5, padding=2),
+            nn.LeakyReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3),
+            nn.Conv2d(48, 48, kernel_size=5, padding=2),
+            nn.LeakyReLU(inplace=True),
+            # nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            # nn.ReLU(inplace=True),
+            # nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            # nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3)
         )
-
         self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes)
+            # nn.Dropout(),
+            nn.Linear(432, 512),
+            nn.LeakyReLU(inplace=True),
+            # nn.Dropout(),
+            # nn.Linear(4096, 4096),
+            # nn.ReLU(inplace=True),
+            nn.Linear(512, num_classes)
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), 256 * 6 * 6)
+        x = x.view(x.size(0), self.num_flat_features(x))
         x = self.classifier(x)
         return x
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
 
 
 class BirdNest32(BaseModel):
@@ -112,21 +119,60 @@ class BirdNest32(BaseModel):
         return x
 
 
-class CoolNet(BaseModel):
-    def __init__(self):
-        super(CoolNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+class VGG(BaseModel):
+
+    def __init__(self, num_classes=555, init_weights=True):
+        super(VGG, self).__init__()
+        self.features = make_layers(cfg['A']) # for vgg11
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes),
+        )
+        if init_weights:
+            self._initialize_weights()
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.leaky_relu(self.fc1(x))
-        x = F.leaky_relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
         return x
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
+
+def make_layers(cfg, batch_norm=False):
+    layers = []
+    in_channels = 3
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
+    return nn.Sequential(*layers)
+
+cfg = {
+    'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
+    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+}

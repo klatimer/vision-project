@@ -7,9 +7,13 @@ import torch
 import pdb
 
 from torch.autograd import Variable
+import datetime
+import time
+import pandas as pd
+import os
 
 # Cuda / CPU setup
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 print("using ", device)
 
 
@@ -25,18 +29,17 @@ def train(net, dataloader, optimizer, criterion, epoch):
         # zero the parameter gradients
         optimizer.zero_grad()
 
-        # forward + backward + optimize
         outputs = net(inputs)
 
+        # backward + optimize
         loss = criterion(outputs, labels)
-
         loss.backward()
         optimizer.step()
 
         # print statistics
         running_loss += loss.item()
         total_loss += loss.item()
-        if (i + 1) % 2000 == 0:    # print every 2000 mini-batches
+        if (i + 1) % 200 == 0:
             net.log('[%d, %5d] loss: %.9f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
@@ -54,20 +57,44 @@ def test(net, dataloader, tag=''):
     else:
         dataTestLoader = dataloader.testloader
     with torch.no_grad():
-        for data in dataTestLoader:
-            images, labels = data
-            images = images.to(device)
-            outputs = net(images)
-            _, predicted = torch.max(outputs.data, 1)
+        if tag == 'Train':
+            for data in dataTestLoader:
+                inputs, labels = data['image'], data['label']
+                inputs, labels = inputs.to(device), labels.to(device)
 
-            labels = labels.to(device)
+                outputs = net(inputs)
 
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+                _, predicted = torch.max(outputs.data, 1)
 
-    net.log('%s Accuracy of the network: %d %%' % (tag,
-        100 * correct / total))
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
 
+            net.log('%s Accuracy of the network: %d %%' % (tag,
+                100 * correct / total))
+
+        else: # Need to write a csv file of predictions to submit to kaggle
+            dfs = []
+
+            filename = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S_predictions.csv')
+            prediction_dir = 'predictions'
+            if not os.path.exists(prediction_dir):
+                os.mkdir(prediction_dir)
+
+            for data in dataTestLoader:
+                inputs, names = data['image'], data['name']
+                inputs = inputs.to(device)
+                outputs = net(inputs)
+                _, predictions = torch.max(outputs.data, 1)
+                for i in range(len(names)):
+                    # dfs.append(pd.DataFrame([[names[i]], [predictions[i].item()]], columns=('path', 'class')))
+                    dfs.append(pd.DataFrame({'path': names[i], 'class': predictions[i].item()}, index=[i]))
+                    # dfs.append(pd.DataFrame.from_items(('path', names[i]), ('class', predictions[i].item())))
+
+            df = pd.concat(dfs).reindex(columns=['path', 'class'])
+            df.to_csv(os.path.join(prediction_dir, filename), encoding='utf-8', index=False)
+
+
+    """
     class_correct = list(0. for i in range(10))
     class_total = list(0. for i in range(10))
     with torch.no_grad():
@@ -87,10 +114,12 @@ def test(net, dataloader, tag=''):
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
 
-
-    for i in range(10):
+    
+    for i in range(555):
         net.log('%s Accuracy of %5s : %2d %%' % (
             tag, dataloader.classes[i], 100 * class_correct[i] / class_total[i]))
+    """
+
 
 def main():
     args = argParser()
@@ -114,8 +143,10 @@ def main():
     for epoch in range(args.epochs):
         net.adjust_learning_rate(optimizer, epoch, args)
         train(net, birdLoader, optimizer, criterion, epoch)
-        if epoch % 1 == 0: # Comment out this part if you want a faster training time
+        if epoch % 5 == 0: # Log training accuracy every 5 epochs
             test(net, birdLoader, 'Train')
+        if epoch % 10 == 0: # write csv output every 10 epochs
+            test(net, birdLoader, 'Test')
 
     print('The log is recorded in ')
     print(net.logFile.name)
