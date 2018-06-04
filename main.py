@@ -140,13 +140,24 @@ def main():
     criterion = net.criterion().to(device)
     optimizer = net.optimizer()
 
+    model_dir = 'models'
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+
     for epoch in range(args.epochs):
         net.adjust_learning_rate(optimizer, epoch, args)
         train(net, birdLoader, optimizer, criterion, epoch)
         if epoch % 5 == 0: # Log training accuracy every 5 epochs
             test(net, birdLoader, 'Train')
-        if epoch % 10 == 0: # write csv output every 10 epochs
+        if epoch % 10 == 0: # write csv output every 10 epochs and save model
             test(net, birdLoader, 'Test')
+            try:
+                torch.save(net, os.path.join(model_dir, 'model.pt'))
+            except:
+                print("Could not save model")
+
+    # Save the model
+    torch.save(net, 'model.pt')
 
     print('The log is recorded in ')
     print(net.logFile.name)
