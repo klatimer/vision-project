@@ -20,4 +20,8 @@ def argParser():
     parser.add_argument('--batchSize', default=4, type=int)
     parser.add_argument('--epochs', default=1, type=int)
     parser.add_argument('--model', type=model_class)
+    parser.add_argument('--name', default='model', type=str)
+    parser.add_argument('--train')
+    parser.add_argument('--demo')
+    parser.add_argument('--modelPath', default='', type=str)
     return parser.parse_args()

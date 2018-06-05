@@ -1,14 +1,10 @@
 import torch
-import torchvision
 import torchvision.transforms as transforms
-from torch.autograd import Variable
-from torch.nn.utils.rnn import pack_padded_sequence as pack
 
 import os
 import pandas as pd
 from PIL import Image
 import numpy as np
-import random
 
 
 class BirdLoader(object):
@@ -18,9 +14,9 @@ class BirdLoader(object):
         transform = transforms.Compose(
             [
                 # Data augmentations
-                transforms.Resize((64, 64)),
+                transforms.Resize((72, 72)),
                 transforms.RandomCrop((64, 64)),
-                # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
                 transforms.RandomHorizontalFlip(),
                 # transforms.RandomRotation(10),
                 transforms.ToTensor(),
@@ -53,6 +49,31 @@ class BirdLoader(object):
                 classes.append(line.rstrip())
         self.classes = classes
 
+
+class BirdDemoLoader(object):
+    """ Data loader for the demo """
+
+    def __init__(self, args):
+        super(BirdDemoLoader, self).__init__()
+
+        transform = transforms.Compose([
+            transforms.Resize((64, 64)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ])
+
+        root_dir = '~/.kaggle/competitions/birds/'
+        csv_file = 'labels.csv'
+
+        bird_demo_set = BirdDemoSet(csv_file=csv_file, root_dir=root_dir, transform=transform)
+        self.demoLoader = torch.utils.data.DataLoader(bird_demo_set, batch_size=1,
+                                                      shuffle=False, num_workers=2)
+
+        classes = []
+        with open(os.path.expanduser(os.path.join(root_dir, 'names.txt'))) as f:
+            for line in f:
+                classes.append(line.rstrip())
+        self.classes = classes
 
 # Need to wrap images and labels
 class BirdTrainSet(torch.utils.data.Dataset):
@@ -96,4 +117,29 @@ class BirdTestSet(torch.utils.data.Dataset):
         label = self.labels.iloc[idx]
         item = {'image': img, 'label': torch.from_numpy(np.array(label))}
         # item = {img, torch.from_numpy(np.array(label))}
+        return item
+
+class BirdDemoSet(torch.utils.data.Dataset):
+    """ Demo data set"""
+
+    def __init__(self, csv_file, root_dir, transform):
+        self.root_dir = root_dir
+        data = pd.read_csv(root_dir + csv_file)
+        self.names = data.iloc[:, 0]  # image file names
+        self.labels = data.iloc[:, 1]  # corresponding labels
+        self.transform = transform
+        self.preserve = transforms.Compose([transforms.ToTensor()])
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        """ return a dictionary of the transformed img, label, and the original img"""
+        name = os.path.join(self.root_dir, self.names.iloc[idx])
+        img = (Image.open(os.path.expanduser(name)))
+        ogImg = self.preserve(img)
+        img = self.transform(img)
+        label = self.labels.iloc[idx]
+        item = {'image': img, 'label': torch.from_numpy(np.array(label)),
+                'ogImg': ogImg}
         return item
