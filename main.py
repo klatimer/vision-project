@@ -51,8 +51,8 @@ def test(net, dataloader, tag='', save=None):
     if tag == 'Train':
         dataTestLoader = dataloader.trainloader
     else:
-        # dataTestLoader = dataloader.testloader
-        dataTestLoader = dataloader.trainloader
+        dataTestLoader = dataloader.testloader
+        # dataTestLoader = dataloader.trainloader
     with torch.no_grad():
         for data in dataTestLoader:
             images, labels = data['image'], data['label']

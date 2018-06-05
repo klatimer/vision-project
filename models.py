@@ -53,21 +53,21 @@ class BirdNestV1(BaseModel):
             # nn.AdaptiveAvgPool2d((227, 227)), # downsample
             nn.Conv2d(3, 24, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(24, 48, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3),
-            nn.Conv2d(48, 48, kernel_size=5, padding=2),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(48, 64, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
-            # nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            # nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
             # nn.Conv2d(128, 128, kernel_size=3, padding=1),
             # nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3)
         )
         self.classifier = nn.Sequential(
             # nn.Dropout(),
-            nn.Linear(432, 512),
+            nn.Linear(576, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(),
             # nn.Linear(4096, 4096),
