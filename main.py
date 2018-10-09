@@ -151,13 +151,11 @@ def main():
             test(net, birdLoader, 'Train')
         if epoch % 10 == 0: # write csv output every 10 epochs and save model
             test(net, birdLoader, 'Test')
-            try:
-                torch.save(net, os.path.join(model_dir, 'model.pt'))
-            except:
-                print("Could not save model")
-
-    # Save the model
-    torch.save(net, 'model.pt')
+            if epoch % 50 == 0: # save model every 50 epochs
+                try:
+                    torch.save(net, os.path.join(model_dir, 'model_epoch' + str(epoch) + '.pt'))
+                except:
+                    print("Could not save model")
 
     print('The log is recorded in ')
     print(net.logFile.name)

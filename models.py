@@ -36,8 +36,8 @@ class BaseModel(nn.Module):
         # an exponential curve.
         lr = args.lr
         if epoch > 0:
-            lr = args.lr * math.exp(math.log(0.1) * 50 / epoch)
-        elif epoch > 100: # Saturate at 1% of original learning rate
+            lr = args.lr * math.exp(math.log(0.1) * epoch / 50)
+        elif epoch > 150: # Saturate at 1% of original learning rate
             lr = args.lr * 0.01
         """
         # This one uses the specified learning rate for all of the training
@@ -220,8 +220,8 @@ class Bottleneck(nn.Module):
 
 class ResNet(BaseModel):
 
-    # Args set here for ResNet50
-    def __init__(self, block=Bottleneck, layers=[3, 4, 6, 3], num_classes=555):
+    # Args set here for ResNet101
+    def __init__(self, block=Bottleneck, layers=[3, 4, 23, 3], num_classes=555):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
